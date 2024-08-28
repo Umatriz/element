@@ -1,13 +1,17 @@
 use bevy::{
     app::{App, Startup, Update},
-    prelude::{Camera2dBundle, Commands, Component, Query, Transform, With, Without},
+    input::ButtonInput,
+    prelude::{
+        Camera2dBundle, Commands, Component, KeyCode, OrthographicProjection, Query, Res,
+        Transform, With, Without,
+    },
 };
 
 use crate::entity::player::Player;
 
 pub fn camera_plugin(app: &mut App) {
     app.add_systems(Startup, spawn)
-        .add_systems(Update, follow_player);
+        .add_systems(Update, (follow_player, camera_scaling));
 }
 
 #[derive(Component)]
@@ -32,4 +36,29 @@ pub fn follow_player(
     camera_transform.translation = camera_transform
         .translation
         .lerp(player_transform.translation, 0.2);
+}
+
+pub fn camera_scaling(
+    mut camera: Query<&mut OrthographicProjection, With<Camera>>,
+    keys: Res<ButtonInput<KeyCode>>,
+) {
+    let Ok(mut camera) = camera.get_single_mut() else {
+        return;
+    };
+
+    let mut scale = camera.scale;
+
+    if keys.pressed(KeyCode::KeyZ) {
+        scale += 0.02;
+    }
+
+    if keys.pressed(KeyCode::KeyX) {
+        scale -= 0.02;
+    }
+
+    if !(0.2..=1.0).contains(&scale) {
+        return;
+    }
+
+    camera.scale = scale;
 }

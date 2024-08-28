@@ -1,33 +1,37 @@
 use bevy::{
-    app::{App, Startup, Update},
-    color::Color,
+    app::{App, Update},
     core::Name,
     input::ButtonInput,
-    math::{Vec2, Vec3},
-    prelude::{Commands, Component, KeyCode, Query, Res, Transform, With},
+    math::Vec3,
+    prelude::{
+        in_state, Commands, Component, IntoSystemConfigs, KeyCode, OnEnter, Query, Res, Transform,
+        With,
+    },
     reflect::Reflect,
-    sprite::{Sprite, SpriteBundle},
+    sprite::{SpriteBundle, TextureAtlas},
 };
+
+use crate::{ImagesAssets, State};
 
 use super::MovementSpeed;
 
 pub fn player_plugin(app: &mut App) {
-    app.add_systems(Startup, spawn)
-        .add_systems(Update, movement);
+    app.add_systems(OnEnter(State::Game), spawn)
+        .add_systems(Update, movement.run_if(in_state(State::Game)));
 }
 
 #[derive(Component, Reflect)]
 pub struct Player;
 
-pub fn spawn(mut commands: Commands) {
+pub fn spawn(mut commands: Commands, images_assets: Res<ImagesAssets>) {
     commands
         .spawn(SpriteBundle {
-            sprite: Sprite {
-                color: Color::hsv(258.0, 0.02, 0.92),
-                custom_size: Some(Vec2::splat(15.0)),
-                ..Default::default()
-            },
+            texture: images_assets.characters.clone(),
             ..Default::default()
+        })
+        .insert(TextureAtlas {
+            layout: images_assets.layout.clone(),
+            index: 2,
         })
         .insert((Name::new("Player"), Player, MovementSpeed::ONE));
 }
